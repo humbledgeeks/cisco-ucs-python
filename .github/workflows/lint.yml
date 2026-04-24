@@ -1,0 +1,65 @@
+name: Lint & Security Scan
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+
+  python-lint:
+    name: ruff
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff on all .py files
+        run: ruff check . --exclude .git
+
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Scan for hardcoded credentials
+        run: |
+          echo "Scanning for hardcoded passwords, tokens, and API keys..."
+          FOUND=0
+          PATTERNS=(
+            'password\s*=\s*["\x27][^"\x27$\{][^"\x27]{2,}["\x27]'
+            'passwd\s*=\s*["\x27][^"\x27$\{][^"\x27]{2,}["\x27]'
+            'api[_-]?key\s*=\s*["\x27][^"\x27$\{]{8,}["\x27]'
+            'secret\s*=\s*["\x27][^"\x27$\{]{8,}["\x27]'
+            'token\s*=\s*["\x27][^"\x27$\{]{8,}["\x27]'
+          )
+          for pattern in "${PATTERNS[@]}"; do
+            HITS=$(grep -rniE "$pattern" . \
+              --include="*.py" \
+              --exclude-dir=".git" --exclude-dir=".github" \
+              | grep -v "vault_" \
+              | grep -v "#.*password" \
+              | grep -iv "example\|sample\|placeholder\|changeme\|yourpassword\|CHANGE_ME")
+            if [ -n "$HITS" ]; then
+              echo "Potential hardcoded secret found:"
+              echo "$HITS"
+              FOUND=1
+            fi
+          done
+          if [ "$FOUND" -eq 1 ]; then
+            echo "Secrets scan failed. Remove hardcoded credentials."
+            exit 1
+          else
+            echo "No hardcoded credentials found."
+          fi

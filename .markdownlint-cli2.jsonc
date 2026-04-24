@@ -1,0 +1,11 @@
+{
+  // markdownlint-cli2 configuration
+  "ignores": [
+    ".claude/**"
+  ],
+  "config": {
+    "default": true,
+    "MD013": false,
+    "MD033": false
+  }
+}
