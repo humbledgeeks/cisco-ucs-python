@@ -47,7 +47,7 @@ All Cisco scripts go in `Cisco/UCS/PowerShell/` or `Cisco/UCS/Ansible/`
     Date    : <today's date>
     Version : 1.0
     Module  : Cisco.UCSManager
-    Repo    : infra-automation/Cisco/UCS
+    Repo    : cisco-ucs-python
 #>
 ```
 - Connect with `Connect-Ucs -Name $ucsManagerIP -Credential $creds`
